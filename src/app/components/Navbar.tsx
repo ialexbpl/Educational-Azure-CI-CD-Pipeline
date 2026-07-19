@@ -17,7 +17,7 @@ export function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-xl text-[#58a6ff]">StatMaster</span>
+            <span className="text-xl text-[#58a6ff]">STATMASTER 1.0</span>
           </Link>
 
           {/* Search */}
