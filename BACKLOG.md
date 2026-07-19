@@ -15,14 +15,15 @@
 - [x] Polished `README.md` with workalong screenshots
 
 ## Next
-- [ ] Jenkins path — follow `JENKINS_WALKTHROUGH.md` (Step 1: container)
+- [ ] Optional: Jenkins on a small Azure VM (past the local Docker wall) — see `JENKINS_WALKTHROUGH.md` → WALL
 - [ ] Optional: GitHub Environment `production` with required reviewers
 - [ ] Budget alert + destroy AKS when idle
 - [ ] Later: Terraform/Bicep IaC
 - [ ] Later: Azure DevOps remake
 
 ## Notes
-- Keep `WALKTHROUGH.md` for Actions; Jenkins lives only in `JENKINS_WALKTHROUGH.md`
-- Budget ~€80 — AKS node is the main burn; Jenkins runs locally in Docker
-- Promote via branch (Actions): develop=dev, main=prod
+- Keep `WALKTHROUGH.md` for Actions; Jenkins lives in `JENKINS_WALKTHROUGH.md`
+- Jenkins local path hit wall: Students block ACR Tasks; Docker-in-Jenkins on Windows deferred
+- GitHub Actions remains the reliable deploy path
+- Budget ~€80 — AKS is main burn; don’t leave a Jenkins VM running 24/7
 

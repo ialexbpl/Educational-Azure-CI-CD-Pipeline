@@ -1,4 +1,4 @@
-# StatMaster — Jenkins Walkthrough
+﻿# StatMaster — Jenkins Walkthrough
 
 Parallel CI/CD path for the same app: **Docker image → Azure Container Registry → AKS** (`statmaster-dev` / `statmaster-prod`).
 
@@ -11,6 +11,56 @@ Parallel CI/CD path for the same app: **Docker image → Azure Container Registr
 
 Screenshots: [`workalong images jenkins/`](./workalong%20images%20jenkins/)
 
+
+**Status:** We hit a **wall** on local Jenkins full deploy (see **WALL** below). GitHub Actions remains the working CD path.
+
+---
+
+## WALL - where we stopped
+
+Local Jenkins got far, then blocked by **Azure for Students** + **Docker-on-Windows**.
+
+### What already worked
+
+| Step | Result |
+|------|--------|
+| Jenkins LTS in Docker | UI on http://localhost:8080 |
+| Plugins | Pipeline, Git, Credentials Binding |
+| 4 Azure credentials in Jenkins | SP configured |
+| Pipeline job `statmaster-cicd` from GitHub | Checkout from `develop` OK |
+| `az login` (service principal) | Success - subscription Azure for Students |
+
+### Where it failed
+
+```text
+az acr build ...
+ERROR: TasksOperationsNotAllowed
+ACR Tasks requests for the registry statmasteracrab ... are not permitted.
+```
+
+**Meaning:** ACR **Tasks** (cloud build via `az acr build`) are **not allowed** on this Students subscription.
+
+### Why we did not force Docker-in-Jenkins on the PC
+
+To `docker build` / `docker push` from the Jenkins container you must remount with the host Docker socket, install Docker CLI inside Jenkins, and copy `jenkins_home`. That is fragile on Docker Desktop for Windows and leaves extra data on the machine. We **stopped** rather than paper over it for a student demo.
+
+### What still works for real deploys
+
+**GitHub Actions** builds on GitHub runners, pushes ACR, deploys AKS (already proven for `statmaster-dev`). See WALKTHROUGH.md.
+
+### Clean way past the wall
+
+Run Jenkins on a **small Azure VM** with Docker + az + kubectl on the VM:
+
+```text
+GitHub -> Jenkins on Azure VM -> docker build/push ACR -> kubectl apply AKS
+```
+
+Deallocate the VM when not demoing so credit lasts.
+
+**Interview line:** We validated Jenkins Pipeline-as-Code and Azure SP auth locally. ACR Tasks are disallowed on Azure for Students, and Docker-in-Docker on a Windows laptop was not worth the ops noise. The production-shaped setup is Jenkins on a locked-down Azure VM with the same Jenkinsfile; until then GitHub Actions owns CD.
+
+---
 ---
 
 ## How this compares to GitHub Actions
@@ -36,15 +86,15 @@ GitHub repo
 
 ## Checklist
 
-- [x] Step 1 — Run Jenkins container (Unlock screen reached)
-- [x] Step 1b — Suggested plugins: **Pipeline / Git / Credentials Binding** OK (some optional plugins may fail — ignore)
-- [x] Step 1c — Admin user + Dashboard (Welcome to Jenkins)
-- [x] Step 2 — Confirm plugins / skip optional failures
-- [x] Step 4 — Add `Jenkinsfile` to the repo
-- [x] Step 4b — Install az + kubectl in Jenkins container
-- [x] Step 4c — Switch Build stage to `az acr build`
-- [ ] Step 5 — Push Jenkinsfile + create Pipeline job + run `dev`
-- [ ] Step 6 — Optional prod deploy
+- [x] Step 1 — Run Jenkins container + unlock + admin
+- [x] Step 2 — Plugins (Pipeline / Git / Credentials Binding)
+- [x] Step 3 — Azure credentials in Jenkins
+- [x] Step 4 — `Jenkinsfile` + `az`/`kubectl` in container
+- [x] Step 5 — Pipeline job; checkout + **Azure login OK**
+- [x] **WALL** — `az acr build` → `TasksOperationsNotAllowed` (Students)
+- [ ] Skipped for now — Docker socket remount on PC (too messy)
+- [ ] Later — Jenkins on Azure VM to finish CD
+- [ ] Optional — prod deploy from Jenkins
 
 ---
 
@@ -301,31 +351,43 @@ docker exec jenkins-statmaster kubectl version --client
 
 Both should print version info (az may take a minute on first install).
 
-### Update Build stage in `Jenkinsfile`
+### Student subscription note — `az acr build` blocked
 
-Replace the **Build and push** stage with this (uses ACR cloud build — no local `docker`):
+Azure for Students often returns `TasksOperationsNotAllowed` for ACR Tasks.  
+**Fix:** use `docker build` + `docker push` from Jenkins, with the Docker socket mounted into the container (Step 4d below).
 
-```groovy
-    stage('Build and push') {
-      steps {
-        script {
-          def tag = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : "manual${env.BUILD_NUMBER}"
-          env.IMAGE_TAG = tag
-          env.IMAGE = "${env.ACR_LOGIN_SERVER}/${env.IMAGE_NAME}:${tag}"
-        }
-        sh '''
-          az acr build \
-            --registry "$ACR_NAME" \
-            --image "${IMAGE_NAME}:${IMAGE_TAG}" \
-            .
-        '''
-      }
-    }
+---
+
+## Step 4d — Give Jenkins access to Docker (SKIPPED - see WALL)
+
+**Status: skipped.** Optional escape hatch only; we hit the wall and chose not to remount Docker socket on the PC.
+
+### Original idea (not recommended here)
+
+Run these in **PowerShell** (keeps your Jenkins config/credentials):
+
+```powershell
+mkdir "$env:USERPROFILE\jenkins_home_statmaster" -Force
+docker cp jenkins-statmaster:/var/jenkins_home/. "$env:USERPROFILE\jenkins_home_statmaster\"
+
+docker commit jenkins-statmaster jenkins-with-tools:local
+docker stop jenkins-statmaster
+docker rm jenkins-statmaster
+
+docker run -d --name jenkins-statmaster `
+  -p 8080:8080 -p 50000:50000 `
+  -v "${env:USERPROFILE}\jenkins_home_statmaster:/var/jenkins_home" `
+  -v /var/run/docker.sock:/var/run/docker.sock `
+  --restart=unless-stopped `
+  jenkins-with-tools:local
+
+docker exec -u root jenkins-statmaster bash -c "apt-get update && apt-get install -y docker.io"
+docker exec -u root jenkins-statmaster bash -c "chmod 666 /var/run/docker.sock"
+
+docker exec jenkins-statmaster docker version
 ```
 
-Leave the other stages as they are.
-
-Reply **tools done** when `az` and `kubectl` work and the Jenkinsfile Build stage is updated.
+Then push the updated `Jenkinsfile` (docker build/push) and rebuild the job.
 
 ---
 
@@ -354,3 +416,4 @@ Reply **tools done** when `az` and `kubectl` work and the Jenkinsfile Build stag
 - “Same artifact path as Actions; only the orchestrator changes.”
 - “Pipeline as Code: `Jenkinsfile` in Git; secrets in Jenkins credentials.”
 - “Local Jenkins for learning/cost; production teams often run Jenkins on a VM or K8s.”
+- “We hit ACR Tasks blocked on Azure for Students; documented it and kept Actions as the working CD path; VM-hosted Jenkins is the clean unblock.”
