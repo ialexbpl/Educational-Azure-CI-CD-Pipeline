@@ -1,8 +1,8 @@
 # StatMaster — Azure + Kubernetes + GitHub Actions Walkthrough
 
-Capgemini-style demo: deploy this Vite/React frontend to **Azure Kubernetes (AKS)** with **dev** and **prod**, automated by **GitHub Actions**.
+Deploy this Vite/React frontend to **Azure Kubernetes (AKS)** with **dev** and **prod**, automated by **GitHub Actions**.
 
-**Repo:** https://github.com/ialexbpl/Educational-Azure-CI-CD-Pipeline  
+**Repo:** [https://github.com/ialexbpl/Educational-Azure-CI-CD-Pipeline](https://github.com/ialexbpl/Educational-Azure-CI-CD-Pipeline)  
 
 **Status (as of last update):** end-to-end **dev** works (Actions green → pod Running → public LoadBalancer IP). **Prod** deploys when you merge `develop` → `main`.
 
@@ -10,18 +10,22 @@ Capgemini-style demo: deploy this Vite/React frontend to **Azure Kubernetes (AKS
 
 ## Goal
 
-| Piece | Choice | Why |
-| ----- | ------ | --- |
-| App | Vite/React static frontend | Existing StatMaster UI |
-| Cloud | Azure for Students (~€80 credit) | Interview-relevant, real bill awareness |
-| Compute | **One** AKS cluster | Two clusters burn credit too fast |
-| Environments | Namespaces `statmaster-dev` / `statmaster-prod` | Same cluster, logical separation |
-| Images | Azure Container Registry (ACR) | Private image store AKS pulls from |
-| CI/CD | GitHub Actions first | Later: Jenkins / Azure DevOps |
+
+| Piece        | Choice                                          | Why                                     |
+| ------------ | ----------------------------------------------- | --------------------------------------- |
+| App          | Vite/React static frontend                      | Existing StatMaster UI                  |
+| Cloud        | Azure for Students (~€80 credit)                | Interview-relevant, real bill awareness |
+| Compute      | **One** AKS cluster                             | Two clusters burn credit too fast       |
+| Environments | Namespaces `statmaster-dev` / `statmaster-prod` | Same cluster, logical separation        |
+| Images       | Azure Container Registry (ACR)                  | Private image store AKS pulls from      |
+| CI/CD        | GitHub Actions first                            | Later: Jenkins / Azure DevOps           |
+
 
 **Interview line:** “One shared cluster with namespace isolation for cost; branch strategy promotes from dev to prod.”
 
 ---
+
+
 
 ## Architecture (current)
 
@@ -42,17 +46,23 @@ git push to develop or main
 
 ---
 
+
+
 ## Branch → environment map
 
-| Git event | Branch | Namespace | Notes |
-| --------- | ------ | --------- | ----- |
-| Push / merge into | `develop` | `statmaster-dev` | Automatic |
-| Push / merge into | `main` | `statmaster-prod` | Optional GitHub Environment `production` approval |
+
+| Git event         | Branch    | Namespace         | Notes                                             |
+| ----------------- | --------- | ----------------- | ------------------------------------------------- |
+| Push / merge into | `develop` | `statmaster-dev`  | Automatic                                         |
+| Push / merge into | `main`    | `statmaster-prod` | Optional GitHub Environment `production` approval |
+
 
 A **merge is a push** to the target branch. Merging `develop` into `develop` does nothing useful.  
-PR direction for prod: **`develop` → `main`**.
+PR direction for prod: `develop` **→** `main`.
 
 ---
+
+
 
 ## Step 1 — Azure subscription
 
@@ -64,6 +74,8 @@ PR direction for prod: **`develop` → `main`**.
 
 ---
 
+
+
 ## Step 2 — Resource group `rg-statmaster`
 
 **What:** Resource group in **Poland Central**.
@@ -72,39 +84,49 @@ PR direction for prod: **`develop` → `main`**.
 
 ---
 
+
+
 ## Step 3 — Azure Container Registry (ACR)
 
-| Setting | Value | Why |
-| ------- | ----- | --- |
-| Name | `statmasteracrab` | Globally unique |
-| Login server | `statmasteracrab.azurecr.io` | Docker push/pull target |
-| SKU | **Basic** | Cheapest for demo |
-| Networking | Public | Private Link = Premium (too costly) |
+
+| Setting      | Value                        | Why                                 |
+| ------------ | ---------------------------- | ----------------------------------- |
+| Name         | `statmasteracrab`            | Globally unique                     |
+| Login server | `statmasteracrab.azurecr.io` | Docker push/pull target             |
+| SKU          | **Basic**                    | Cheapest for demo                   |
+| Networking   | Public                       | Private Link = Premium (too costly) |
+
 
 **Why ACR:** CI builds a container image; AKS pulls it. Like a private Docker Hub on Azure.
 
 ---
 
+
+
 ## Step 4 — AKS cluster `aks-statmaster`
 
-| Setting | Value | Why |
-| ------- | ----- | --- |
-| Region | Poland Central | Same as ACR |
-| Pricing tier | Free | Cheaper control plane |
-| Node pool | 1 × **System** | Required by AKS |
-| Node size | `Standard_B2als_v2` | Smallest workable size |
-| Node count | **1**, no autoscale | Fit ~€80 credit |
-| Network | Azure CNI Overlay, policy None | Simple demo defaults |
-| Private cluster | Off | Easier Cloud Shell access |
-| Monitoring extras | Off | Save money |
-| ACR integration | `statmasteracrab` attached | Pull images without docker passwords in K8s |
-| OIDC + Workload Identity | On | Future hardening / better auth story |
+
+| Setting                  | Value                          | Why                                         |
+| ------------------------ | ------------------------------ | ------------------------------------------- |
+| Region                   | Poland Central                 | Same as ACR                                 |
+| Pricing tier             | Free                           | Cheaper control plane                       |
+| Node pool                | 1 × **System**                 | Required by AKS                             |
+| Node size                | `Standard_B2als_v2`            | Smallest workable size                      |
+| Node count               | **1**, no autoscale            | Fit ~€80 credit                             |
+| Network                  | Azure CNI Overlay, policy None | Simple demo defaults                        |
+| Private cluster          | Off                            | Easier Cloud Shell access                   |
+| Monitoring extras        | Off                            | Save money                                  |
+| ACR integration          | `statmasteracrab` attached     | Pull images without docker passwords in K8s |
+| OIDC + Workload Identity | On                             | Future hardening / better auth story        |
+
 
 **Portal note:** “Preview automation” only **exports** an ARM/Bicep template — don’t redeploy it or you may create a second cluster.
 
 Exported template kept under `exported iac template/` for learning (IaC later).
 
 ---
+
+
 
 ## Step 5 — Cloud Shell + namespaces
 
@@ -117,11 +139,13 @@ kubectl create namespace statmaster-prod
 
 - `get-credentials` — kubeconfig for this cluster  
 - `get nodes` — worker must be **Ready**  
-- namespaces — logical **dev** / **prod** on one cluster  
+- namespaces — logical **dev** / **prod** on one cluster
 
 Cloud Shell with **no storage** is fine for short commands (session is ephemeral).
 
 ---
+
+
 
 ## Step 6 — GitHub repository
 
@@ -135,24 +159,30 @@ git remote set-url origin https://github.com/ialexbpl/Educational-Azure-CI-CD-Pi
 
 ---
 
+
+
 ## Step 7 — Dockerfile + nginx
 
+
+
 ### Why Docker?
+
 AKS runs **containers**, not `npm run dev`.
 
 Multi-stage build:
 
-1. **Node** — `npm ci` + `npm run build` → static `dist/`  
-2. **nginx** — serve those files on port 80  
+1. **Node** — `npm ci` + `npm run build` → static `dist/`
+2. **nginx** — serve those files on port 80
 
 **Interview line:** “Build once, deploy the same image tag to dev then prod.”
 
 ### Why nginx?
+
 After Vite build the app is static HTML/JS/CSS. nginx:
 
 - listens on **80**  
 - SPA routing via `try_files` → `/index.html`  
-- `/healthz` for Kubernetes probes  
+- `/healthz` for Kubernetes probes
 
 Local smoke test (optional): `docker build -t statmaster-web:local .` then `docker run --rm -p 8080:80 statmaster-web:local`.
 
@@ -160,19 +190,25 @@ Files: `Dockerfile`, `nginx.conf`, `.dockerignore`.
 
 ---
 
+
+
 ## Step 8 — Kubernetes manifests
 
 CI/CD does **not** replace Kubernetes. The pipeline **applies** these files.
 
-| File | Role |
-| ---- | ---- |
+
+| File                  | Role                                                          |
+| --------------------- | ------------------------------------------------------------- |
 | `k8s/deployment.yaml` | Pods, image placeholder `IMAGE_TO_REPLACE`, probes, resources |
-| `k8s/service.yaml` | `LoadBalancer` → public IP for demo |
-| `k8s/explanation.md` | Line-by-line Deployment guide |
+| `k8s/service.yaml`    | `LoadBalancer` → public IP for demo                           |
+| `k8s/explanation.md`  | Line-by-line Deployment guide                                 |
+
 
 Workflow replaces `IMAGE_TO_REPLACE` with the ACR image built in that run, then `kubectl apply -n <namespace>`.
 
 ---
+
+
 
 ## Step 9 — GitHub Actions workflow
 
@@ -183,8 +219,8 @@ Guide: `.github/workflows/explanation.md`
 
 **Jobs:**
 
-1. **Build and push image** — Azure login → `docker build` → push `statmasteracrab.azurecr.io/statmaster-web:<7-char-sha>`  
-2. **Deploy to AKS** — pick namespace from branch → apply manifests → `rollout status` → print Service IP  
+1. **Build and push image** — Azure login → `docker build` → push `statmasteracrab.azurecr.io/statmaster-web:<7-char-sha>`
+2. **Deploy to AKS** — pick namespace from branch → apply manifests → `rollout status` → print Service IP
 
 ```text
 develop push → ACR → statmaster-dev
@@ -193,16 +229,18 @@ main push    → ACR → statmaster-prod  (+ environment: production if configur
 
 ---
 
+
+
 ## Step 10 — Azure identity for Actions (no long-lived personal login)
 
 GitHub is not you. Actions needs a **robot identity**.
 
 **Portal path we used:**
 
-1. Entra ID → **App registrations** → `github-statmaster-cicd`  
-2. **Certificates & secrets** → create client secret (copy Value once)  
-3. Resource group `rg-statmaster` → **IAM** → role **Contributor** (under Privileged administrator roles) → assign to that app  
-4. GitHub → **Settings** → **Secrets and variables** → **Actions** → secret name **`AZURE_CREDENTIALS`**:
+1. Entra ID → **App registrations** → `github-statmaster-cicd`
+2. **Certificates & secrets** → create client secret (copy Value once)
+3. Resource group `rg-statmaster` → **IAM** → role **Contributor** (under Privileged administrator roles) → assign to that app
+4. GitHub → **Settings** → **Secrets and variables** → **Actions** → secret name `AZURE_CREDENTIALS`:
 
 ```json
 {
@@ -217,11 +255,13 @@ Never commit that JSON. Screenshots of the secret **name** only are OK; never sc
 
 ---
 
+
+
 ## Step 11 — First successful deploy (done on `develop`)
 
-1. Commit Docker / k8s / workflow / docs  
-2. Create and push remote branch **`develop`**  
-3. Actions run **Success**: Build (~1m) + Deploy (~30s)  
+1. Commit Docker / k8s / workflow / docs
+2. Create and push remote branch `develop`
+3. Actions run **Success**: Build (~~1m) + Deploy (~~30s)
 4. Verify:
 
 ```bash
@@ -235,13 +275,15 @@ Node.js 16 deprecation **warnings** in Actions annotations are harmless for this
 
 ---
 
+
+
 ## Step 12 — Prod (how to finish it)
 
-`statmaster-prod` stays empty until something runs the pipeline on **`main`**.
+`statmaster-prod` stays empty until something runs the pipeline on `main`.
 
-1. Optional: GitHub **Environments** → create **`production`** → required reviewer = you  
-2. Open PR **`develop` → `main`** → **Merge**  
-3. Watch Actions on `main` (Approve deployment if asked)  
+1. Optional: GitHub **Environments** → create `production` → required reviewer = you
+2. Open PR `develop` **→** `main` → **Merge**
+3. Watch Actions on `main` (Approve deployment if asked)
 4. Verify:
 
 ```bash
@@ -250,22 +292,31 @@ kubectl get pods,svc -n statmaster-prod
 
 Prod gets its **own** LoadBalancer IP (separate from dev).
 
-**Do not delete `develop`** after the merge — keep using it for continuous dev deploys.
+**Do not delete** `develop` after the merge — keep using it for continuous dev deploys.
 
 ---
+
+
 
 ## What CI vs CD means here
 
-| | Meaning in this project |
-| - | ------------------------ |
-| **CI** | Build Docker image + push to ACR on every relevant push |
+
+|        | Meaning in this project                                           |
+| ------ | ----------------------------------------------------------------- |
+| **CI** | Build Docker image + push to ACR on every relevant push           |
 | **CD** | Apply K8s manifests so AKS runs that image in the right namespace |
+
 
 ---
 
+
+
 ## Checklist
 
+
+
 ### Done
+
 - [x] RG `rg-statmaster` (Poland Central)  
 - [x] ACR `statmasteracrab` (Basic)  
 - [x] AKS `aks-statmaster` (1 × B2als_v2, ACR attached)  
@@ -276,7 +327,10 @@ Prod gets its **own** LoadBalancer IP (separate from dev).
 - [x] App registration + Contributor on RG + `AZURE_CREDENTIALS`  
 - [x] Remote `develop` + green Actions → **dev live**  
 
+
+
 ### Remaining / optional
+
 - [ ] Merge `develop` → `main` → confirm **prod** pod + EXTERNAL-IP  
 - [ ] GitHub Environment `production` with required reviewers  
 - [ ] Budget alert + delete AKS when not demoing  
@@ -285,16 +339,22 @@ Prod gets its **own** LoadBalancer IP (separate from dev).
 
 ---
 
+
+
 ## Cost cheat sheet (~€80)
 
-| Resource | Notes |
-| -------- | ----- |
-| AKS node `B2als_v2` × 1 | Main cost — destroy when idle |
-| ACR Basic | Small cost |
-| LoadBalancer public IP(s) | One per Service that is type LoadBalancer (dev and/or prod) |
-| Monitoring / App Gateway / 2nd cluster | Avoid |
+
+| Resource                               | Notes                                                       |
+| -------------------------------------- | ----------------------------------------------------------- |
+| AKS node `B2als_v2` × 1                | Main cost — destroy when idle                               |
+| ACR Basic                              | Small cost                                                  |
+| LoadBalancer public IP(s)              | One per Service that is type LoadBalancer (dev and/or prod) |
+| Monitoring / App Gateway / 2nd cluster | Avoid                                                       |
+
 
 ---
+
+
 
 ## Publishing / screenshots
 
@@ -305,32 +365,46 @@ Correlation IDs in portal screenshots are low sensitivity (not passwords).
 
 ---
 
+
+
 ## Quick glossary
 
-| Term | Meaning |
-| ---- | ------- |
-| RG | Resource group |
-| ACR | Container image registry |
-| AKS | Managed Kubernetes on Azure |
-| Namespace | Logical env inside one cluster |
-| Deployment | Desired pods + rollout logic |
-| Service / LoadBalancer | Stable network endpoint; LB gives a public IP |
-| Service principal / App registration | Robot identity for CI |
-| Image tag (git sha) | Exact build artifact deployed |
+
+| Term                                 | Meaning                                       |
+| ------------------------------------ | --------------------------------------------- |
+| RG                                   | Resource group                                |
+| ACR                                  | Container image registry                      |
+| AKS                                  | Managed Kubernetes on Azure                   |
+| Namespace                            | Logical env inside one cluster                |
+| Deployment                           | Desired pods + rollout logic                  |
+| Service / LoadBalancer               | Stable network endpoint; LB gives a public IP |
+| Service principal / App registration | Robot identity for CI                         |
+| Image tag (git sha)                  | Exact build artifact deployed                 |
+
 
 ---
 
+
+
 ## Resources reference
 
-| Resource | Name |
-| -------- | ---- |
-| Subscription | Azure for Students |
-| Resource group | `rg-statmaster` |
-| Region | Poland Central |
-| ACR | `statmasteracrab` → `statmasteracrab.azurecr.io` |
-| AKS | `aks-statmaster` |
-| Namespaces | `statmaster-dev`, `statmaster-prod` |
-| Entra app | `github-statmaster-cicd` |
-| GitHub secret | `AZURE_CREDENTIALS` |
-| GitHub | `ialexbpl/Educational-Azure-CI-CD-Pipeline` |
-| Branches | `develop` (dev), `main` (prod) |
+
+| Resource       | Name                                             |
+| -------------- | ------------------------------------------------ |
+| Subscription   | Azure for Students                               |
+| Resource group | `rg-statmaster`                                  |
+| Region         | Poland Central                                   |
+| ACR            | `statmasteracrab` → `statmasteracrab.azurecr.io` |
+| AKS            | `aks-statmaster`                                 |
+| Namespaces     | `statmaster-dev`, `statmaster-prod`              |
+| Entra app      | `github-statmaster-cicd`                         |
+| GitHub secret  | `AZURE_CREDENTIALS`                              |
+| GitHub         | `ialexbpl/Educational-Azure-CI-CD-Pipeline`      |
+| Branches       | `develop` (dev), `main` (prod)                   |
+
+---
+
+## Next learning path
+
+Jenkins (same Azure targets, local Docker): see **[JENKINS_WALKTHROUGH.md](./JENKINS_WALKTHROUGH.md)**.
+
