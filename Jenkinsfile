@@ -39,21 +39,31 @@ pipeline {
       }
     }
 
-   stage('Build and push') {
-  steps {
-    script {
-      def tag = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : "manual${env.BUILD_NUMBER}"
-      env.IMAGE_TAG = tag
-      env.IMAGE = "${env.ACR_LOGIN_SERVER}/${env.IMAGE_NAME}:${tag}"
+    stage('Build and push') {
+      steps {
+        script {
+          def tag = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : "manual${env.BUILD_NUMBER}"
+          env.IMAGE = "${env.ACR_LOGIN_SERVER}/${env.IMAGE_NAME}:${tag}"
+        }
+        withCredentials([
+          string(credentialsId: 'AZURE_CLIENT_ID',       variable: 'AZURE_CLIENT_ID'),
+          string(credentialsId: 'AZURE_CLIENT_SECRET',   variable: 'AZURE_CLIENT_SECRET'),
+          string(credentialsId: 'AZURE_TENANT_ID',       variable: 'AZURE_TENANT_ID'),
+          string(credentialsId: 'AZURE_SUBSCRIPTION_ID', variable: 'AZURE_SUBSCRIPTION_ID')
+        ]) {
+          sh '''
+            az login --service-principal \
+              -u "$AZURE_CLIENT_ID" \
+              -p "$AZURE_CLIENT_SECRET" \
+              --tenant "$AZURE_TENANT_ID"
+            az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+            az acr login --name "$ACR_NAME"
+            docker build -t "$IMAGE" .
+            docker push "$IMAGE"
+          '''
+        }
+      }
     }
-    sh '''
-      az acr build \
-        --registry "$ACR_NAME" \
-        --image "${IMAGE_NAME}:${IMAGE_TAG}" \
-        .
-    '''
-  }
-}
 
     stage('Deploy to AKS') {
       steps {
