@@ -4,18 +4,22 @@ Deploy a **Vite + React** frontend (**StatMaster**) to **Azure Kubernetes Servic
 
 Built as a Capgemini-style learning project on **Azure for Students** (~€80 budget): one small AKS cluster, two namespaces, ACR for images, branch-based promotion.
 
+**Learning path:** first provisioned everything in the **Azure Portal** (to understand the pieces), then **mirrored the same infrastructure with Terraform** and redeployed the app with GitHub Actions — practicing **Infrastructure as Code (IaC)** without changing the CD story.
+
 | Piece | Choice |
 | ----- | ------ |
 | App | StatMaster dashboard (static SPA after build) |
 | Registry | Azure Container Registry (`statmasteracrab`) |
 | Cluster | AKS `aks-statmaster` (1 × `B2als_v2`) |
 | Envs | `statmaster-dev` / `statmaster-prod` |
+| IaC | **Terraform** (`infra/terraform`) — RG, ACR, AKS, AcrPull |
 | CI/CD | GitHub Actions → ACR → AKS |
 | Branches | `develop` → dev · `main` → prod |
 
 Deep step-by-step notes:
 
-- GitHub Actions / Azure: **[WALKTHROUGH.md](./WALKTHROUGH.md)**
+- GitHub Actions / Azure portal: **[WALKTHROUGH.md](./WALKTHROUGH.md)**
+- Terraform IaC: **[infra/terraform/explanation.md](./infra/terraform/explanation.md)**
 - Jenkins (local Docker): **[JENKINS_WALKTHROUGH.md](./JENKINS_WALKTHROUGH.md)**
 - Task list: **[BACKLOG.md](./BACKLOG.md)**
 
@@ -24,6 +28,9 @@ Deep step-by-step notes:
 ## Architecture
 
 ```text
+Terraform (infra/terraform)
+        → rg-statmaster + ACR + AKS + AcrPull
+
 git push (develop | main)
         │
         ▼
@@ -35,7 +42,7 @@ git push (develop | main)
                 └── main    → statmaster-prod
 ```
 
-Same Docker image pipeline for both environments. The **branch** selects the **namespace**.
+Same Docker image pipeline for both environments. The **branch** selects the **namespace**. Infrastructure is defined as code; the app is delivered by CI/CD.
 
 ---
 
@@ -81,6 +88,18 @@ Merge `develop` → `main` to deploy **prod**:
 
 ![Merged to main for prod](./Workalong%20images/Merged_prod.png)
 
+### 8. IaC — mirror the stack with Terraform
+
+After learning the portal, the same RG / ACR / AKS stack was recreated with **Terraform** (`terraform apply`), namespaces recreated, Contributor re-attached for the Actions SP, then CD ran again on the new cluster:
+
+![Terraform apply](./Workalong%20images%20terraform/applied_terraform_iac.png)
+
+![Cluster via Terraform + namespaces](./Workalong%20images%20terraform/cluster_setup_using_tf.png)
+
+![Actions deploy after Terraform AKS](./Workalong%20images%20terraform/Deployment_after_terraform_implementation.png)
+
+Details: [`infra/terraform/`](./infra/terraform/) and [`explanation.md`](./infra/terraform/explanation.md).
+
 ---
 
 ## Local development
@@ -111,7 +130,9 @@ Then open `http://localhost:8080`.
 | `Dockerfile` + `nginx.conf` | Multi-stage build → nginx serves SPA |
 | `k8s/` | Deployment + Service (+ explanations) |
 | `.github/workflows/ci-cd.yml` | Build → ACR → AKS |
+| `infra/terraform/` | Terraform IaC (RG, ACR, AKS, AcrPull) + explanation |
 | `WALKTHROUGH.md` | Full portal + pipeline walkthrough |
+| `JENKINS_WALKTHROUGH.md` | Jenkins learning path |
 | `Workalong images/` | Screenshots from the setup journey |
 
 ---
@@ -158,6 +179,8 @@ Dashboard design from Figma: [Design StatMaster Dashboard](https://www.figma.com
 
 ## What’s next (learning path)
 
+- [x] Recreate portal resources with **Terraform** and redeploy via Actions
 - [ ] Gate `main` with a GitHub **production** environment (required reviewers)
-- [ ] Recreate portal resources with **Terraform / Bicep**
-- [ ] Tell the same story again with **Jenkins** or **Azure DevOps**
+- [ ] Terraform: Entra app / OIDC for CI identity (still portal today)
+- [ ] Finish / host **Jenkins** on an Azure VM (past local Docker wall)
+- [ ] Same story again with **Azure DevOps**
