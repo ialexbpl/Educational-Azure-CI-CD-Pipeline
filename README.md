@@ -13,7 +13,11 @@ Built as a Capgemini-style learning project on **Azure for Students** (~€80 bu
 | CI/CD | GitHub Actions → ACR → AKS |
 | Branches | `develop` → dev · `main` → prod |
 
-Deep step-by-step notes: **[WALKTHROUGH.md](./WALKTHROUGH.md)** · Task list: **[BACKLOG.md](./BACKLOG.md)**
+Deep step-by-step notes:
+
+- GitHub Actions / Azure: **[WALKTHROUGH.md](./WALKTHROUGH.md)**
+- Jenkins (local Docker): **[JENKINS_WALKTHROUGH.md](./JENKINS_WALKTHROUGH.md)**
+- Task list: **[BACKLOG.md](./BACKLOG.md)**
 
 ---
 

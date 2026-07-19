@@ -15,14 +15,14 @@
 - [x] Polished `README.md` with workalong screenshots
 
 ## Next
-- [ ] Merge `develop` → `main` → verify `statmaster-prod` (if not done)
+- [ ] Jenkins path — follow `JENKINS_WALKTHROUGH.md` (Step 1: container)
 - [ ] Optional: GitHub Environment `production` with required reviewers
 - [ ] Budget alert + destroy AKS when idle
 - [ ] Later: Terraform/Bicep IaC
-- [ ] Later: Jenkins / Azure DevOps remake
+- [ ] Later: Azure DevOps remake
 
 ## Notes
-- Keep remote `develop` — do not delete after merging to main
-- Budget ~€80 — AKS node is the main burn
-- Promote via branch: develop=dev, main=prod
-- README images use `Workalong images/` (Subscription IDs blurred in screenshots)
+- Keep `WALKTHROUGH.md` for Actions; Jenkins lives only in `JENKINS_WALKTHROUGH.md`
+- Budget ~€80 — AKS node is the main burn; Jenkins runs locally in Docker
+- Promote via branch (Actions): develop=dev, main=prod
+
