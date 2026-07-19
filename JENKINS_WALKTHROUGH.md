@@ -61,7 +61,6 @@ Deallocate the VM when not demoing so credit lasts.
 **Interview line:** We validated Jenkins Pipeline-as-Code and Azure SP auth locally. ACR Tasks are disallowed on Azure for Students, and Docker-in-Docker on a Windows laptop was not worth the ops noise. The production-shaped setup is Jenkins on a locked-down Azure VM with the same Jenkinsfile; until then GitHub Actions owns CD.
 
 ---
----
 
 ## How this compares to GitHub Actions
 
@@ -391,7 +390,11 @@ Then push the updated `Jenkinsfile` (docker build/push) and rebuild the job.
 
 ---
 
-## Step 5 — Job + first deploy to dev *(next)*
+## Step 5 — Job + first deploy to dev (partially done)
+
+**Done:** job created, Git checkout OK, Azure login OK.
+
+**Blocked at Build:** see WALL (TasksOperationsNotAllowed).
 
 1. Commit + push `Jenkinsfile` to GitHub (`develop` or `main`)
 2. Jenkins → New Item → Pipeline → Pipeline script from SCM
