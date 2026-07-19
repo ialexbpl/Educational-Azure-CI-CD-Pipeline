@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: statmaster-web
+  labels:
+    app: statmaster-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: statmaster-web
+  template:
+    metadata:
+      labels:
+        app: statmaster-web
+    spec:
+      containers:
+        - name: web
+          image: IMAGE_TO_REPLACE
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
