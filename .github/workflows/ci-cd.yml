@@ -1,0 +1,84 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+env:
+  ACR_NAME: statmasteracrab
+  ACR_LOGIN_SERVER: statmasteracrab.azurecr.io
+  IMAGE_NAME: statmaster-web
+  AKS_RESOURCE_GROUP: rg-statmaster
+  AKS_NAME: aks-statmaster
+
+jobs:
+  build:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set image name
+        id: image
+        run: |
+          TAG="${GITHUB_SHA::7}"
+          echo "image=${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push to ACR
+        run: |
+          az acr login --name "$ACR_NAME"
+          docker build -t "${{ steps.image.outputs.image }}" .
+          docker push "${{ steps.image.outputs.image }}"
+
+  deploy:
+    name: Deploy to AKS
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set namespace from branch
+        id: ns
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "namespace=statmaster-prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "namespace=statmaster-dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group "$AKS_RESOURCE_GROUP" \
+            --name "$AKS_NAME" \
+            --overwrite-existing
+
+      - name: Apply manifests
+        run: |
+          IMAGE="${{ needs.build.outputs.image }}"
+          NS="${{ steps.ns.outputs.namespace }}"
+          sed "s|IMAGE_TO_REPLACE|${IMAGE}|g" k8s/deployment.yaml \
+            | kubectl apply -n "$NS" -f -
+          kubectl apply -n "$NS" -f k8s/service.yaml
+          kubectl rollout status deployment/statmaster-web -n "$NS" --timeout=180s
+
+      - name: Show public IP (LoadBalancer)
+        run: |
+          NS="${{ steps.ns.outputs.namespace }}"
+          kubectl get svc statmaster-web -n "$NS" -o wide

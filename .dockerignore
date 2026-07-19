@@ -1,0 +1,7 @@
+node_modules
+dist
+.git
+.github
+Workalong images
+exported iac template
+*.md
