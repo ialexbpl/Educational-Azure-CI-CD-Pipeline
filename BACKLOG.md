@@ -15,15 +15,17 @@
 - [x] Polished `README.md` with workalong screenshots
 
 ## Next
-- [ ] Optional: Jenkins on a small Azure VM (past the local Docker wall) — see `JENKINS_WALKTHROUGH.md` → WALL
-- [ ] Optional: GitHub Environment `production` with required reviewers
-- [ ] Budget alert + destroy AKS when idle
-- [ ] Later: Terraform/Bicep IaC
-- [ ] Later: Azure DevOps remake
+- [x] Terraform clean start — `apply` OK (RG + ACR + AKS + AcrPull)
+- [x] Namespaces + Actions deploy on new cluster (dev)
+- [x] Terraform workalong screenshots moved + mostly redacted
+- [ ] Re-blur Subscription ID on `Workalong images terraform/login_to_azure_cli.png`
+- [ ] **Later:** Terraform Entra app + SP/OIDC + Contributor for CI/CD
+- [ ] Optional: Jenkins on Azure VM
+- [ ] Budget: `terraform destroy` or `az aks stop` when idle
+- [ ] Prod deploy on new TF cluster (`main`) if not done yet
 
 ## Notes
-- Keep `WALKTHROUGH.md` for Actions; Jenkins lives in `JENKINS_WALKTHROUGH.md`
-- Jenkins local path hit wall: Students block ACR Tasks; Docker-in-Jenkins on Windows deferred
-- GitHub Actions remains the reliable deploy path
-- Budget ~€80 — AKS is main burn; don’t leave a Jenkins VM running 24/7
+- Terraform now: RG + ACR + AKS + AcrPull only
+- CI/CD “robot user” still portal for now — planned as later Terraform (`azuread`)
+- GitHub Actions remains the reliable app deploy path
 
