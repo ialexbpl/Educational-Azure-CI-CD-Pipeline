@@ -21,6 +21,7 @@ Deep step-by-step notes:
 - GitHub Actions / Azure portal: **[WALKTHROUGH.md](./WALKTHROUGH.md)**
 - Terraform IaC: **[infra/terraform/explanation.md](./infra/terraform/explanation.md)**
 - Jenkins (local Docker): **[JENKINS_WALKTHROUGH.md](./JENKINS_WALKTHROUGH.md)**
+- Loki + Promtail + Grafana (DIY): **[OBSERVABILITY_WALKTHROUGH.md](./OBSERVABILITY_WALKTHROUGH.md)**
 - Task list: **[BACKLOG.md](./BACKLOG.md)**
 
 ---

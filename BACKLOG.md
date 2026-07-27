@@ -13,19 +13,25 @@
 - [x] `develop` branch + green Actions → dev pod + LoadBalancer IP
 - [x] `WALKTHROUGH.md` updated through live CI/CD
 - [x] Polished `README.md` with workalong screenshots
+- [x] `screening.md` — pitch + Q&A cheat sheet na rozmowę
 
 ## Next
 - [x] Terraform clean start — `apply` OK (RG + ACR + AKS + AcrPull)
 - [x] Namespaces + Actions deploy on new cluster (dev)
 - [x] Terraform workalong screenshots moved + mostly redacted
 - [ ] Re-blur Subscription ID on `Workalong images terraform/login_to_azure_cli.png`
+- [ ] Optional: CI/CD `workflow_dispatch` input `target` (dev|prod) + keep auto-push or make prod manual-only
 - [ ] **Later:** Terraform Entra app + SP/OIDC + Contributor for CI/CD
 - [ ] Optional: Jenkins on Azure VM
 - [ ] Budget: `terraform destroy` or `az aks stop` when idle
 - [ ] Prod deploy on new TF cluster (`main`) if not done yet
+- [ ] Optional later: AWS twin stack (ECR + EKS + Terraform + Actions OIDC)
+- [ ] Optional: Loki + Promtail + Grafana — DIY: `OBSERVABILITY_WALKTHROUGH.md` (Helm, lekki Monolithic)
+  - Stack na AKS działa; Grafana = ClusterIP + lokalny `kubectl port-forward` (limit 3 public IP Students)
 
 ## Notes
 - Terraform now: RG + ACR + AKS + AcrPull only
 - CI/CD “robot user” still portal for now — planned as later Terraform (`azuread`)
 - GitHub Actions remains the reliable app deploy path
+- AWS equivalent story: ECR≈ACR, EKS≈AKS, IAM roles≈Entra SP / AcrPull; same Docker + k8s namespaces + Actions pattern
 
